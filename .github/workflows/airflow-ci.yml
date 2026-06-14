@@ -1,0 +1,47 @@
+name: Airflow CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/dags/**", "src/requirements.txt"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-dags:
+    name: Validate DAGs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Airflow
+        run: pip install apache-airflow==2.9.3
+      - name: Validate DAG syntax
+        run: |
+          python -c "
+          import os, sys
+          sys.path.insert(0, 'src/dags')
+          dag_files = [f for f in os.listdir('src/dags') if f.endswith('.py')]
+          for dag_file in dag_files:
+              print(f'Validating {dag_file}...')
+              compile(open(f'src/dags/{dag_file}').read(), dag_file, 'exec')
+              print(f'  OK: {dag_file}')
+          print(f'All {len(dag_files)} DAGs validated successfully')
+          "
+      - name: Check DAG import
+        run: |
+          cd src && python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from dags.etl_pipeline import dag as etl_dag
+          from dags.data_quality_check import dag as dq_dag
+          assert etl_dag.dag_id == 'enterprise_etl_pipeline'
+          assert dq_dag.dag_id == 'data_quality_checks'
+          print('DAG imports successful')
+          "
+      - name: Lint with flake8
+        run: |
+          pip install flake8==7.1.0
+          flake8 src/dags/ --max-line-length=120 --ignore=E501,W503 || true
