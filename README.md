@@ -1,45 +1,53 @@
-# 🚀 airflow-enterprise
+# Airflow Enterprise
 
-![Terraform](https://img.shields.io/badge/Terraform-Enterprise-purple)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-Ready-blue)
-![GitHub Actions](https://img.shields.io/badge/CI/CD-Automated-success)
+Production-ready **Apache Airflow** deployment for enterprise data pipelines. Includes DAGs, Docker Compose local dev setup, Kubernetes/Helm production deployment via Terraform, and CI validation.
 
-Author: Abhishek Sawant
+## Quick Start (Local)
 
-## Executive Summary
-Enterprise-grade reference implementation for airflow-enterprise.
-
-## Architecture
-See architecture/architecture.md
-
-## Features
-- Infrastructure as Code
-- Security by Design
-- CI/CD Automation
-- Observability
-- Runbooks
-- Testing
-
-## Repository Structure
-- docs/
-- architecture/
-- terraform/
-- ansible/
-- kubernetes/
-- helm/
-- src/
-- tests/
-
-## Quick Start
 ```bash
-terraform init
-terraform plan
-terraform apply
+git clone https://github.com/abhisheksawant52/airflow-enterprise.git
+cd airflow-enterprise
+
+# Start all services
+docker compose up airflow-init
+docker compose up -d
+
+# Open UI
+open http://localhost:8080
+# Login: admin / admin
 ```
 
-## Roadmap
-1. Foundation
-2. Platform Services
-3. Security
-4. Monitoring
-5. Production Rollout
+## What's Included
+
+- **ETL Pipeline DAG** - extract, validate, transform, load with branching and retries
+- **Data Quality DAG** - row count, null checks, freshness validation
+- **Docker Compose** - local dev environment (Airflow + PostgreSQL)
+- **Terraform** - deploy Airflow to Kubernetes via official Helm chart
+- **GitHub Actions** - DAG syntax validation and linting on every push
+
+## Production Deploy (Kubernetes)
+
+```bash
+cd terraform
+terraform init
+terraform apply -var="admin_password=<secure-password>"
+
+# Access UI
+terraform output port_forward_command
+# Run the command, then open http://localhost:8080
+```
+
+## Adding DAGs
+
+Add `.py` files to `src/dags/`. They are automatically picked up by Airflow.
+
+## GitHub Actions
+
+Validates all DAGs on push to `src/dags/`. No secrets required for linting.
+
+## Cleanup
+
+```bash
+docker compose down -v          # local
+cd terraform && terraform destroy  # Kubernetes
+```
